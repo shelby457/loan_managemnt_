@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LendFlow | NextGen Enterprise Loan Management Platform</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-vault"></i>
+                </div>
+                <div class="brand-text">
+                    <h2>LendFlow</h2>
+                    <span class="badge-sub">Enterprise API v2</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-item active" data-view="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-view="loans">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>Loans & Underwriting</span>
+                    <span class="badge-pending" id="pending-count-badge">0</span>
+                </button>
+                <button class="nav-item" data-view="borrowers">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Borrowers</span>
+                </button>
+                <button class="nav-item" data-view="repayments">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                    <span>Repayments & Schedules</span>
+                </button>
+                <button class="nav-item" data-view="calculator">
+                    <i class="fa-solid fa-calculator"></i>
+                    <span>EMI Financial Engine</span>
+                </button>
+                <button class="nav-item" data-view="expenses">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span>Expenses & Splitwise</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="api-links">
+                    <a href="/swagger-ui.html" target="_blank" class="quick-link">
+                        <i class="fa-solid fa-code"></i>
+                        <span>Swagger OpenAPI</span>
+                    </a>
+                    <a href="/h2-console" target="_blank" class="quick-link">
+                        <i class="fa-solid fa-database"></i>
+                        <span>H2 Console</span>
+                    </a>
+                </div>
+                <div class="status-indicator">
+                    <span class="pulse-dot"></span>
+                    <span>Backend Live on :8080</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 id="page-title">Executive Dashboard</h1>
+                    <p id="page-desc">Real-time loan portfolio monitoring and risk analytics</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="btn-open-expense-modal" onclick="openExpenseModal()">
+                        <i class="fa-solid fa-receipt"></i> Add Expense
+                    </button>
+                    <button class="btn btn-secondary" id="btn-quick-calc" onclick="switchView('calculator')">
+                        <i class="fa-solid fa-sliders"></i> EMI Calculator
+                    </button>
+                    <button class="btn btn-primary" id="btn-open-loan-modal">
+                        <i class="fa-solid fa-plus"></i> New Loan Application
+                    </button>
+                </div>
+            </header>
+
+            <!-- VIEW: Dashboard -->
+            <section id="view-dashboard" class="view-panel active">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon green">
+                            <i class="fa-solid fa-circle-dollar-to-slot"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Total Disbursed</span>
+                            <h3 class="metric-val" id="stat-disbursed">$0</h3>
+                            <span class="metric-sub text-success"><i class="fa-solid fa-arrow-trend-up"></i> Active portfolio volume</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon blue">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Repayments Collected</span>
+                            <h3 class="metric-val" id="stat-repayments">$0</h3>
+                            <span class="metric-sub text-info" id="stat-repayments-sub"><i class="fa-solid fa-check-double"></i> Cash flow recovered</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon purple">
+                            <i class="fa-solid fa-scale-balanced"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Active Outstanding</span>
+                            <h3 class="metric-val" id="stat-outstanding">$0</h3>
+                            <span class="metric-sub" id="stat-active-count">0 Active Loans</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon amber">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Approval Rate</span>
+                            <h3 class="metric-val" id="stat-approval-rate">0%</h3>
+                            <span class="metric-sub" id="stat-borrowers-count">0 Borrowers registered</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts & Activity Row -->
+                <div class="dashboard-grid">
+                    <div class="glass-card chart-container">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-simple"></i> Portfolio by Loan Type</h3>
+                            <span class="pill-tag">Volume Distribution</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="loanTypeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-card chart-container">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-pie"></i> Loan Status Breakdown</h3>
+                            <span class="pill-tag">Status Allocation</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="loanStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Applications Table -->
+                <div class="glass-card recent-loans-card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-clock-rotate-left"></i> Recent Applications & Action Items</h3>
+                        <button class="btn btn-sm btn-outline" onclick="switchView('loans')">View All Loans</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="custom-table" id="dashboard-recent-loans-table">
+                            <thead>
+                                <tr>
+                                    <th>Loan ID</th>
+                                    <th>Borrower</th>
+                                    <th>Type</th>
+                                    <th>Principal</th>
+                                    <th>Interest</th>
+                                    <th>Monthly EMI</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: Loans & Underwriting -->
+            <section id="view-loans" class="view-panel">
+                <div class="glass-card">
+                    <div class="card-header flex-wrap">
+                        <div class="filter-tabs">
+                            <button class="tab-btn active" onclick="filterLoans('ALL', this)">All Loans</button>
+                            <button class="tab-btn" onclick="filterLoans('PENDING', this)">Pending Underwriting</button>
+                            <button class="tab-btn" onclick="filterLoans('ACTIVE', this)">Active Portfolio</button>
+                            <button class="tab-btn" onclick="filterLoans('FULLY_PAID', this)">Fully Paid</button>
+                            <button class="tab-btn" onclick="filterLoans('REJECTED', this)">Rejected</button>
+                        </div>
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="loan-search-input" placeholder="Search by borrower or ID..." onkeyup="searchLoansTable()">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="custom-table" id="all-loans-table">
+                            <thead>
+                                <tr>
+                                    <th>Loan ID</th>
+                                    <th>Borrower</th>
+                                    <th>Credit Score</th>
+                                    <th>Type</th>
+                                    <th>Principal</th>
+                                    <th>Rate / Term</th>
+                                    <th>Monthly EMI</th>
+                                    <th>Remaining Balance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: Borrowers Hub -->
+            <section id="view-borrowers" class="view-panel">
+                <div class="section-header-row">
+                    <div class="search-box wide">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="borrower-search-input" placeholder="Search borrowers by name, email, phone..." onkeyup="searchBorrowers()">
+                    </div>
+                    <button class="btn btn-primary" id="btn-add-borrower">
+                        <i class="fa-solid fa-user-plus"></i> Register Borrower
+                    </button>
+                </div>
+
+                <div class="borrowers-grid" id="borrowers-cards-container">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- VIEW: Repayments & Schedules -->
+            <section id="view-repayments" class="view-panel">
+                <div class="repayments-layout">
+                    <!-- Left: Select Loan -->
+                    <div class="glass-card loan-picker-panel">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-list-check"></i> Select Active Loan</h3>
+                        </div>
+                        <div class="loan-selection-list" id="repayment-loan-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Right: Schedule & Payment Actions -->
+                    <div class="glass-card schedule-panel">
+                        <div id="schedule-empty-state" class="empty-state">
+                            <i class="fa-solid fa-hand-pointer fa-2x"></i>
+                            <h4>Select a loan from the left to view amortization schedule</h4>
+                        </div>
+
+                        <div id="schedule-details-view" style="display: none;">
+                            <div class="loan-detail-banner" id="loan-detail-banner">
+                                <!-- Populated dynamically -->
+                            </div>
+
+                            <div class="schedule-actions-row">
+                                <button class="btn btn-success" id="btn-trigger-payment">
+                                    <i class="fa-solid fa-credit-card"></i> Pay Monthly EMI / Custom Repayment
+                                </button>
+                            </div>
+
+                            <h4 class="mt-4 mb-2"><i class="fa-solid fa-calendar-days"></i> Monthly Installment Breakdown</h4>
+                            <div class="table-responsive schedule-table-wrapper">
+                                <table class="custom-table" id="schedule-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Due Date</th>
+                                            <th>EMI Amount</th>
+                                            <th>Principal Part</th>
+                                            <th>Interest Part</th>
+                                            <th>Remaining Balance</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <h4 class="mt-4 mb-2"><i class="fa-solid fa-receipt"></i> Payment Transaction Ledger</h4>
+                            <div class="table-responsive">
+                                <table class="custom-table" id="loan-tx-table">
+                                    <thead>
+                                        <tr>
+                                            <th>TX Reference</th>
+                                            <th>Date</th>
+                                            <th>Amount Paid</th>
+                                            <th>Method</th>
+                                            <th>Remaining Balance</th>
+                                            <th>Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: EMI Financial Engine / Calculator -->
+            <section id="view-calculator" class="view-panel">
+                <div class="calc-grid">
+                    <div class="glass-card calc-controls">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-sliders"></i> Loan Parameter Simulator</h3>
+                            <span class="pill-tag">Reducing Balance Method</span>
+                        </div>
+
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <label>Loan Amount ($)</label>
+                                <span class="val-badge" id="calc-amount-val">$50,000</span>
+                            </div>
+                            <input type="range" id="calc-amount" min="1000" max="500000" step="1000" value="50000" oninput="runCalculator()">
+                            <div class="slider-limits">
+                                <span>$1,000</span>
+                                <span>$500,000</span>
+                            </div>
+                        </div>
+
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <label>Annual Interest Rate (%)</label>
+                                <span class="val-badge" id="calc-rate-val">9.5%</span>
+                            </div>
+                            <input type="range" id="calc-rate" min="2" max="30" step="0.1" value="9.5" oninput="runCalculator()">
+                            <div class="slider-limits">
+                                <span>2.0%</span>
+                                <span>30.0%</span>
+                            </div>
+                        </div>
+
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <label>Term (Months)</label>
+                                <span class="val-badge" id="calc-term-val">36 Months (3 yrs)</span>
+                            </div>
+                            <input type="range" id="calc-term" min="6" max="240" step="6" value="36" oninput="runCalculator()">
+                            <div class="slider-limits">
+                                <span>6 Mo</span>
+                                <span>240 Mo (20 yrs)</span>
+                            </div>
+                        </div>
+
+                        <div class="calc-cta mt-4">
+                            <button class="btn btn-primary btn-block" onclick="applyWithCalculatorValues()">
+                                <i class="fa-solid fa-paper-plane"></i> Apply Loan With These Values
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-card calc-results">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-donut"></i> Financial Breakdown</h3>
+                        </div>
+
+                        <div class="calc-summary-boxes">
+                            <div class="summary-box primary-box">
+                                <span class="lbl">Monthly EMI</span>
+                                <h2 id="calc-emi-result">$1,601.83</h2>
+                            </div>
+                            <div class="summary-box">
+                                <span class="lbl">Total Interest</span>
+                                <h3 id="calc-interest-result">$7,665.88</h3>
+                            </div>
+                            <div class="summary-box">
+                                <span class="lbl">Total Repayment</span>
+                                <h3 id="calc-total-result">$57,665.88</h3>
+                            </div>
+                        </div>
+
+                        <div class="chart-wrapper-small mt-4">
+                            <canvas id="calcBreakdownChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Amortization Schedule Table Preview -->
+                <div class="glass-card mt-4">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-table-list"></i> Projected Amortization Schedule</h3>
+                    </div>
+                    <div class="table-responsive" style="max-height: 380px;">
+                        <table class="custom-table" id="calc-schedule-table">
+                            <thead>
+                                <tr>
+                                    <th>Month #</th>
+                                    <th>Due Date</th>
+                                    <th>EMI Installment</th>
+                                    <th>Principal</th>
+                                    <th>Interest</th>
+                                    <th>Remaining Principal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: Expenses & Splitwise -->
+            <section id="view-expenses" class="view-panel">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon blue">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Total Monthly Spending</span>
+                            <h3 class="metric-val" id="exp-total-spent">$0</h3>
+                            <span class="metric-sub" id="exp-count-sub">0 Expenses logged</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon green">
+                            <i class="fa-solid fa-arrow-down-left"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Group Shared Volume</span>
+                            <h3 class="metric-val" id="exp-group-volume">$0</h3>
+                            <span class="metric-sub text-success"><i class="fa-solid fa-users"></i> Shared & split items</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon amber">
+                            <i class="fa-solid fa-scale-balanced"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Unsettled Peer Debts</span>
+                            <h3 class="metric-val" id="exp-unsettled-debt">$0</h3>
+                            <span class="metric-sub text-warning" id="exp-debt-count">0 pending settlements</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon purple">
+                            <i class="fa-solid fa-handshake"></i>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Quick Action</span>
+                            <button class="btn btn-sm btn-primary mt-2" onclick="openSettleModal()">
+                                <i class="fa-solid fa-money-bill-transfer"></i> Settle Up Debt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Splitwise Peer Balances & Debt Matrix -->
+                <div class="glass-card mb-4">
+                    <div class="card-header flex-wrap">
+                        <h3><i class="fa-solid fa-diagram-project"></i> Splitwise Peer Balances & Net Settlement Board</h3>
+                        <button class="btn btn-sm btn-success" onclick="openSettleModal()">
+                            <i class="fa-solid fa-handshake"></i> Settle Up Balance
+                        </button>
+                    </div>
+
+                    <div class="splitwise-board-grid">
+                        <!-- Left: Member Net Balances -->
+                        <div>
+                            <h4 class="mb-2" style="font-size: 14px; color: var(--text-muted);"><i class="fa-solid fa-users"></i> Member Net Balances</h4>
+                            <div class="user-balance-list" id="splitwise-user-balances">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Right: Simplified Pairwise Debts -->
+                        <div>
+                            <h4 class="mb-2" style="font-size: 14px; color: var(--text-muted);"><i class="fa-solid fa-arrow-right-arrow-left"></i> Direct Who-Owes-Who Debts</h4>
+                            <div class="peer-debts-list" id="splitwise-peer-debts">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Analytics & Category Chart Row -->
+                <div class="dashboard-grid">
+                    <div class="glass-card chart-container">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-pie"></i> Spending by Category</h3>
+                            <span class="pill-tag" id="exp-chart-month-tag">Current Month</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="expenseCategoryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-card chart-container">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-column"></i> Spending by Member</h3>
+                            <span class="pill-tag">Paid Volume</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="expensePayerChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expense History Table -->
+                <div class="glass-card mt-4">
+                    <div class="card-header flex-wrap">
+                        <div class="filter-tabs">
+                            <button class="tab-btn active" onclick="filterExpensesByCategory('ALL', this)">All Categories</button>
+                            <button class="tab-btn" onclick="filterExpensesByCategory('FOOD_DINING', this)">Dining</button>
+                            <button class="tab-btn" onclick="filterExpensesByCategory('HOUSING', this)">Housing/Rent</button>
+                            <button class="tab-btn" onclick="filterExpensesByCategory('OFFICE_BUSINESS', this)">Business</button>
+                            <button class="tab-btn" onclick="filterExpensesByCategory('UTILITIES', this)">Utilities</button>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-sm btn-primary" onclick="openExpenseModal()">
+                                <i class="fa-solid fa-plus"></i> Add New Expense
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="custom-table" id="all-expenses-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Paid By</th>
+                                    <th>Split Mode</th>
+                                    <th>Split Participants & Shares</th>
+                                    <th>Total Amount</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: Apply New Loan -->
+    <div class="modal-backdrop" id="modal-apply-loan">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-file-signature"></i> New Loan Application</h3>
+                <button class="close-btn" onclick="closeModal('modal-apply-loan')">&times;</button>
+            </div>
+            <form id="form-apply-loan" onsubmit="submitLoanApplication(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Select Borrower *</label>
+                        <select id="apply-user-id" required>
+                            <option value="">-- Choose registered borrower --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Loan Type *</label>
+                            <select id="apply-loan-type" required onchange="onLoanTypeChange()">
+                                <option value="PERSONAL">Personal Loan (12.5%)</option>
+                                <option value="HOME">Home Mortgage (8.5%)</option>
+                                <option value="AUTO">Auto Vehicle Loan (9.0%)</option>
+                                <option value="EDUCATION">Education Loan (10.0%)</option>
+                                <option value="BUSINESS">Business Expansion (14.0%)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Principal Amount ($) *</label>
+                            <input type="number" id="apply-principal" min="1000" step="100" required placeholder="e.g. 25000">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Interest Rate (% Annual)</label>
+                            <input type="number" id="apply-rate" step="0.1" placeholder="Leave empty for standard rate">
+                        </div>
+                        <div class="form-group">
+                            <label>Term (Months) *</label>
+                            <input type="number" id="apply-term" min="1" max="360" required placeholder="e.g. 36">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Purpose / Description</label>
+                        <textarea id="apply-purpose" rows="2" placeholder="e.g. Medical clinic expansion, home remodeling..."></textarea>
+                    </div>
+
+                    <div id="eligibility-banner" class="eligibility-box" style="display: none;">
+                        <!-- Underwriting real-time feedback -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="checkEligibilityQuick()">Check Eligibility</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Submit Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Add New Borrower -->
+    <div class="modal-backdrop" id="modal-add-borrower">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-plus"></i> Register New Borrower</h3>
+                <button class="close-btn" onclick="closeModal('modal-add-borrower')">&times;</button>
+            </div>
+            <form id="form-add-borrower" onsubmit="submitBorrower(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Full Legal Name *</label>
+                        <input type="text" id="borrower-name" required placeholder="e.g. Sophia Martinez">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Email Address *</label>
+                            <input type="email" id="borrower-email" required placeholder="e.g. sophia@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number *</label>
+                            <input type="text" id="borrower-phone" required placeholder="e.g. +1-555-0123">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Monthly Gross Income ($) *</label>
+                            <input type="number" id="borrower-income" min="1" step="100" required placeholder="e.g. 7500">
+                        </div>
+                        <div class="form-group">
+                            <label>Credit Score (300 - 850) *</label>
+                            <input type="number" id="borrower-score" min="300" max="850" required placeholder="e.g. 740">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Employment Status *</label>
+                        <select id="borrower-employment" required>
+                            <option value="EMPLOYED">Employed (Salaried)</option>
+                            <option value="SELF_EMPLOYED">Self-Employed</option>
+                            <option value="BUSINESS_OWNER">Business Owner / Partner</option>
+                            <option value="STUDENT">Student</option>
+                            <option value="UNEMPLOYED">Unemployed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Residential Address</label>
+                        <textarea id="borrower-address" rows="2" placeholder="e.g. 124 Main Street, Seattle, WA"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-borrower')">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Register Borrower</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Make Repayment -->
+    <div class="modal-backdrop" id="modal-make-payment">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-credit-card"></i> Process Loan Installment</h3>
+                <button class="close-btn" onclick="closeModal('modal-make-payment')">&times;</button>
+            </div>
+            <form id="form-make-payment" onsubmit="submitPayment(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="pay-loan-id">
+                    <div class="summary-box mb-3">
+                        <span class="lbl">Loan ID: <strong id="pay-loan-display-id">#0</strong></span>
+                        <span class="lbl">Outstanding Balance: <strong id="pay-loan-balance">$0</strong></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Payment Amount ($) *</label>
+                        <input type="number" id="pay-amount" min="1" step="0.01" required placeholder="Enter repayment amount">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Payment Method *</label>
+                        <select id="pay-method" required>
+                            <option value="UPI">UPI / Instant Transfer</option>
+                            <option value="BANK_TRANSFER">ACH / Bank Wire</option>
+                            <option value="DEBIT_CARD">Debit Card</option>
+                            <option value="CREDIT_CARD">Credit Card</option>
+                            <option value="NET_BANKING">Net Banking</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notes / Memo</label>
+                        <input type="text" id="pay-notes" placeholder="e.g. Monthly scheduled installment">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-make-payment')">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="fa-solid fa-lock"></i> Authorize & Post Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Add Expense & Splitwise Split -->
+    <div class="modal-backdrop" id="modal-add-expense">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-receipt"></i> Log Expense & Split Bill</h3>
+                <button class="close-btn" onclick="closeModal('modal-add-expense')">&times;</button>
+            </div>
+            <form id="form-add-expense" onsubmit="submitExpense(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Description / Item Name *</label>
+                        <input type="text" id="exp-desc" required placeholder="e.g. Team Dinner, Office Fiber Internet, AWS Servers">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Total Amount ($) *</label>
+                            <input type="number" id="exp-amount" min="0.5" step="0.01" required placeholder="e.g. 180.00" oninput="updateSplitPreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>Category *</label>
+                            <select id="exp-category" required>
+                                <option value="FOOD_DINING">Food & Dining</option>
+                                <option value="HOUSING">Housing / Office Rent</option>
+                                <option value="UTILITIES">Utilities & Internet</option>
+                                <option value="OFFICE_BUSINESS">Business / Cloud Tech</option>
+                                <option value="TRANSPORTATION">Transportation</option>
+                                <option value="ENTERTAINMENT">Entertainment</option>
+                                <option value="SHOPPING">Shopping</option>
+                                <option value="MISCELLANEOUS">Miscellaneous</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Paid By (Payer) *</label>
+                            <select id="exp-payer" required onchange="updateSplitPreview()">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Expense Date *</label>
+                            <input type="date" id="exp-date" required>
+                        </div>
+                    </div>
+
+                    <!-- Splitwise Options -->
+                    <div class="form-group" style="background: rgba(255,255,255,0.02); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff;">
+                            <input type="checkbox" id="exp-is-split" checked onchange="toggleSplitSection()">
+                            <span><strong>Split this expense with members (Splitwise mode)</strong></span>
+                        </label>
+
+                        <div id="split-details-section" style="margin-top: 12px;">
+                            <label class="mb-2" style="font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Select Participants to Split Equally with:</label>
+                            <div id="split-participants-checkboxes" style="display: flex; flex-direction: column; gap: 8px;">
+                                <!-- Populated dynamically -->
+                            </div>
+                            <div id="split-calc-preview" style="font-size: 12px; color: var(--accent-cyan); margin-top: 10px;">
+                                <!-- Live calculation preview -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notes / Memo</label>
+                        <input type="text" id="exp-notes" placeholder="Optional details or receipt reference">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-expense')">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save & Split Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Settle Up Debt -->
+    <div class="modal-backdrop" id="modal-settle-debt">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-handshake"></i> Record Settlement (Settle Up)</h3>
+                <button class="close-btn" onclick="closeModal('modal-settle-debt')">&times;</button>
+            </div>
+            <form id="form-settle-debt" onsubmit="submitSettlement(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Who Paid (Debtor settling debt) *</label>
+                        <select id="settle-payer" required>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Paid To (Creditor receiving payment) *</label>
+                        <select id="settle-payee" required>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Amount Settled ($) *</label>
+                            <input type="number" id="settle-amount" min="1" step="0.01" required placeholder="e.g. 50.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Method *</label>
+                            <select id="settle-method" required>
+                                <option value="UPI">UPI / GPay / PhonePe</option>
+                                <option value="BANK_TRANSFER">Bank Transfer / ACH</option>
+                                <option value="CASH">Cash in Hand</option>
+                                <option value="DEBIT_CARD">Debit / Card</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <input type="text" id="settle-notes" placeholder="e.g. Settled lunch + utilities share">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-settle-debt')">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="fa-solid fa-lock"></i> Confirm & Record Settlement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+package com.example.loan_management_api.dto;
+
+import com.example.loan_management_api.model.enums.PaymentMethod;
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class SettlementResponseDTO {
+    private Long id;
+    private Long payerId;
+    private String payerName;
+    private Long payeeId;
+    private String payeeName;
+    private Double amount;
+    private LocalDateTime settlementDate;
+    private PaymentMethod paymentMethod;
+    private String transactionReference;
+    private String notes;
+}
